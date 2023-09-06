@@ -39,6 +39,7 @@ SQLAlchemy==2.0.20
 st-annotated-text==4.0.0
 streamlit==1.18.1
 streamlit-camera-input-live==0.2.0
+langchain==0.0.281
 streamlit-card==0.0.61
 streamlit-embedcode==0.1.2
 streamlit-extras==0.3.0
