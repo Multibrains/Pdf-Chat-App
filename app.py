@@ -4,12 +4,12 @@ from typing_extensions import Concatenate
 import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 import os
 import pickle
 from langchain.callbacks import get_openai_callback
-
+import time
 
 # from dotenv import load_dotenv
 from configEnv import settings
@@ -28,8 +28,7 @@ if pdf is not None:
             raw_text += content
     # st.write(raw_text)
 
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
+    text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
         length_function=len,)
@@ -40,24 +39,31 @@ if pdf is not None:
     # #vector support
     if len(texts) > 0:
         store_name = pdf.name[:-4]
-        if os.path.exists(f"{store_name}.pkl"):
+
+        if os.path.exists(f"{store_name}.pkl") and os.path.getsize(f"{store_name}.pkl") > 0:
             with open(f"{store_name}.pkl", "rb") as f:
                 doc_search = pickle.load(f)
             # st.write("Embeddings loaded from disk")
         else:
             with open(f"{store_name}.pkl", "wb") as f:
-                embeddings = OpenAIEmbeddings()
-                doc_search = FAISS.from_texts(texts, embeddings)
-                pickle.dump(doc_search, f)
+                for t in texts:
+                    embeddings = OpenAIEmbeddings()
+                    doc_search = FAISS.from_texts(t, embeddings)
+                    pickle.dump(doc_search, f)
+                    st.write(t)
+                    time.sleep(22)
+
             # st.write("Embeddings completion completed")
     query = st.text_input("Ask questions about Pdf file:")
     if query:
         if len(texts) > 0:
-            chain = load_qa_chain(OpenAI(model_name='gpt-3.5-turbo', temperature=0.3), chain_type='stuff')
-            docs = doc_search.similarity_search(query=query,k=3)
+            chain = load_qa_chain(
+                OpenAI(model_name='gpt-3.5-turbo', temperature=0.3), chain_type='stuff')
+            docs = doc_search.similarity_search(query=query, k=3)
             with get_openai_callback() as cb:
-                response=chain.run(input_documents=docs, question=query)
+                response = chain.run(input_documents=docs, question=query)
                 print(cb)
             st.write(response)
         else:
-            st.write('No data extracted from pdf uploaded. Please upload correct pdf.')
+            st.write(
+                'No data extracted from pdf uploaded. Please upload correct pdf.')
