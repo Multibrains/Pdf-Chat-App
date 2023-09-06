@@ -46,12 +46,12 @@ if pdf is not None:
             # st.write("Embeddings loaded from disk")
         else:
             with open(f"{store_name}.pkl", "wb") as f:
-                for t in texts:
+                # for t in texts:
                     embeddings = OpenAIEmbeddings()
-                    doc_search = FAISS.from_texts(t, embeddings)
+                    doc_search = FAISS.from_texts(texts, embeddings)
                     pickle.dump(doc_search, f)
-                    st.write(t)
-                    time.sleep(22)
+                    # st.write(t)
+                    # time.sleep(22)
 
             # st.write("Embeddings completion completed")
     query = st.text_input("Ask questions about Pdf file:")
