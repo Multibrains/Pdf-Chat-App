@@ -54,7 +54,7 @@ if pdf is not None:
     if query:
         if len(texts) > 0:
             chain = load_qa_chain(OpenAI(model_name='gpt-3.5-turbo', temperature=0.3), chain_type='stuff')
-            docs = doc_search.similarity_search(query,k=3)
+            docs = doc_search.similarity_search(query=query,k=3)
             with get_openai_callback() as cb:
                 response=chain.run(input_documents=docs, question=query)
                 print(cb)
