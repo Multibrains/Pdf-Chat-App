@@ -10,10 +10,7 @@ import os
 import pickle
 from langchain.callbacks import get_openai_callback
 import time
-
-# from dotenv import load_dotenv
 from configEnv import settings
-# load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = settings.KEY
 st.title('Pdf Chat App')
@@ -26,7 +23,6 @@ if pdf is not None:
         content = page.extract_text()
         if content:
             raw_text += content
-    # st.write(raw_text)
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -34,7 +30,6 @@ if pdf is not None:
         length_function=len,)
     texts = text_splitter.split_text(raw_text)
 
-    # st.write(texts)
 
     # #vector support
     if len(texts) > 0:
@@ -43,17 +38,12 @@ if pdf is not None:
         if os.path.exists(f"{store_name}.pkl") and os.path.getsize(f"{store_name}.pkl") > 0:
             with open(f"{store_name}.pkl", "rb") as f:
                 doc_search = pickle.load(f)
-            # st.write("Embeddings loaded from disk")
         else:
             with open(f"{store_name}.pkl", "wb") as f:
-                # for t in texts:
                     embeddings = OpenAIEmbeddings()
                     doc_search = FAISS.from_texts(texts, embeddings)
                     pickle.dump(doc_search, f)
-                    # st.write(t)
-                    # time.sleep(22)
 
-            # st.write("Embeddings completion completed")
     query = st.text_input("Ask questions about Pdf file:")
     if query:
         if len(texts) > 0:
