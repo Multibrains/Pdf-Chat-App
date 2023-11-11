@@ -1,6 +1,5 @@
 from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
-from typing_extensions import Concatenate
 import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.embeddings.openai import OpenAIEmbeddings
