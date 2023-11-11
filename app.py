@@ -11,49 +11,43 @@ import pickle
 from langchain.callbacks import get_openai_callback
 import time
 
-# from dotenv import load_dotenv
 from configEnv import settings
-# load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = settings.KEY
 st.title('Pdf Chat App')
 st.header('Chat with PDF')
-pdf = st.file_uploader("Upload your Pdf", type='pdf')
+pdf = st.file_uploader("Upload your Pdf", type='pdf',
+                       accept_multiple_files=True)
 if pdf is not None:
-    pdfreader = PdfReader(pdf)
     raw_text = ''
-    for i, page in enumerate(pdfreader.pages):
-        content = page.extract_text()
-        if content:
-            raw_text += content
-    # st.write(raw_text)
-
+    for single_pdf in pdf: 
+        pdfreader = PdfReader(single_pdf)
+       
+        for i, page in enumerate(pdfreader.pages):
+            content = page.extract_text()
+            if content:
+                raw_text += content
+    
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
         length_function=len,)
     texts = text_splitter.split_text(raw_text)
 
-    # st.write(texts)
-
     # #vector support
     if len(texts) > 0:
-        store_name = pdf.name[:-4]
+        for single_pdf in pdf:
+            store_name = single_pdf.name[:-4]
 
-        if os.path.exists(f"{store_name}.pkl") and os.path.getsize(f"{store_name}.pkl") > 0:
-            with open(f"{store_name}.pkl", "rb") as f:
-                doc_search = pickle.load(f)
-            # st.write("Embeddings loaded from disk")
-        else:
-            with open(f"{store_name}.pkl", "wb") as f:
-                # for t in texts:
+            if os.path.exists(f"{store_name}.pkl") and os.path.getsize(f"{store_name}.pkl") > 0:
+                with open(f"{store_name}.pkl", "rb") as f:
+                    doc_search = pickle.load(f)
+            else:
+                with open(f"{store_name}.pkl", "wb") as f:
                     embeddings = OpenAIEmbeddings()
                     doc_search = FAISS.from_texts(texts, embeddings)
                     pickle.dump(doc_search, f)
-                    # st.write(t)
-                    # time.sleep(22)
 
-            # st.write("Embeddings completion completed")
     query = st.text_input("Ask questions about Pdf file:")
     if query:
         if len(texts) > 0:
