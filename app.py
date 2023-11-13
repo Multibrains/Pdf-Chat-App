@@ -1,18 +1,16 @@
 from langchain.llms import OpenAI
-from langchain.chains.question_answering import load_qa_chain
-import streamlit as st
-from PyPDF2 import PdfReader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-import os
-import warnings
-import pickle
-from langchain.callbacks import get_openai_callback
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from configEnv import settings
 from langchain.chat_models import ChatOpenAI
+from PyPDF2 import PdfReader
+import streamlit as st
+import os
+import pickle
+import warnings
+from configEnv import settings
 from htmlTemplates import css, bot_template, user_template
 
 
@@ -88,13 +86,13 @@ def main():
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
-            length_function=len,)
+            length_function=len,
+        )
         texts = text_splitter.split_text(raw_text)
 
     if len(texts) > 0:
         doc_search = get_vectorstore(texts, pdf)
-        st.session_state["conversation"] = get_conversation_chain(
-            doc_search)
+        st.session_state["conversation"] = get_conversation_chain(doc_search)
 
     query = st.text_input("Ask questions about Pdf file:")
     if query:
