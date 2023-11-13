@@ -29,7 +29,6 @@ def get_conversation_chain(_vectorstore):
     return conversation_chain
 
 
-
 def get_vectorstore(texts, pdf):
     for single_pdf in pdf:
         store_name = single_pdf.name[:-4]
@@ -69,6 +68,8 @@ def main():
 
     st.session_state["conversation"] = None
     st.session_state["chat_history"] = None
+    if "session_state" not in st.session_state:
+        st.session_state["session_state"] = None
     st.title('Pdf Chat App')
     st.header('Chat with PDF')
 
