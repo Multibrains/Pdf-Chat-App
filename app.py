@@ -6,9 +6,9 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 import os
+import warnings
 import pickle
 from langchain.callbacks import get_openai_callback
-import time
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from configEnv import settings
@@ -16,16 +16,18 @@ from langchain.chat_models import ChatOpenAI
 from htmlTemplates import css, bot_template, user_template
 
 
-def get_conversation_chain(vectorstore):
+@st.cache_resource
+def get_conversation_chain(_vectorstore):
     llm = ChatOpenAI()
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        retriever=vectorstore.as_retriever(),
+        retriever=_vectorstore.as_retriever(),
         memory=memory
     )
     return conversation_chain
+
 
 
 def get_vectorstore(texts, pdf):
@@ -45,10 +47,10 @@ def get_vectorstore(texts, pdf):
 
 
 def handle_userinput(user_question):
-    response = st.session_state.conversation({'question': user_question})
-    st.session_state.chat_history = response['chat_history']
+    response = st.session_state["conversation"]({'question': user_question})
+    st.session_state["chat_history"] = response['chat_history']
 
-    for i, message in enumerate(st.session_state.chat_history):
+    for i, message in enumerate(st.session_state["chat_history"]):
         if i % 2 == 0:
             st.write(user_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
@@ -58,16 +60,18 @@ def handle_userinput(user_question):
 
 
 def main():
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+    warnings.filterwarnings(
+        "ignore", category=DeprecationWarning, module="streamlit")
 
     os.environ["OPENAI_API_KEY"] = settings.KEY
     st.write(css, unsafe_allow_html=True)
-    if "conversation" not in st.session_state:
-        st.session_state.conversation = None
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = None
 
+    st.session_state["conversation"] = None
+    st.session_state["chat_history"] = None
     st.title('Pdf Chat App')
     st.header('Chat with PDF')
+
     pdf = st.file_uploader("Upload your Pdf", type='pdf',
                            accept_multiple_files=True)
     if pdf is not None:
@@ -86,17 +90,18 @@ def main():
             length_function=len,)
         texts = text_splitter.split_text(raw_text)
 
-        # #vector support
     if len(texts) > 0:
         doc_search = get_vectorstore(texts, pdf)
-        st.session_state.conversation = get_conversation_chain(doc_search)
+        st.session_state["conversation"] = get_conversation_chain(
+            doc_search)
+
     query = st.text_input("Ask questions about Pdf file:")
     if query:
         if len(texts) > 0:
             handle_userinput(query)
         else:
             st.write(
-                'No data extracted from pdf uploaded. Please upload correct pdf.')
+                'No data extracted from pdf uploaded. Please upload a correct pdf.')
 
 
 if __name__ == '__main__':
