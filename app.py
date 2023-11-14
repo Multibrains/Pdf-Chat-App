@@ -16,29 +16,46 @@ import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
 import time
+import io
+import glob
+from pdf2image import convert_from_bytes
+from pytesseract import image_to_string
+
+from PyPDF2 import PdfReader
+import fitz  # PyMuPDF
 
 
-def pdf_to_text(pdf_document):
-    text = ""
-    st.write(pdf_document)
-    for page_num in range(len(pdf_document.pages)):
-        page = pdf_document.pages[page_num]
+# Helper function to convert PDF to images and extract text using Tesseract OCR
 
-        # Get the pixmap representation of the page
-        pixmap = page.getPixmap()
 
-        # Convert the pixmap to an image using PyMuPDF
-        image = Image.frombytes(
-            "RGB", (pixmap.width, pixmap.height), pixmap.samples)
+def get_text_from_any_pdf(pdf_bytes):
+    images = convert_pdf_to_img(pdf_bytes)
+    final_text = ""
+    for pg, img in enumerate(images):
+        final_text += convert_image_to_text(img)
+    return final_text
 
-        image_path = f"temp_img_{page_num + 1}.png"
-        image.save(image_path)
+# Helper function to convert PDF to images
 
-        # Use Tesseract OCR to extract text from the image
-        text += f"\nPage {page_num + 1}:\n"
-        text += pytesseract.image_to_string(image_path)
 
+def convert_pdf_to_img(pdf_bytes):
+    images = convert_from_bytes(pdf_bytes)
+    return images
+
+# Helper function to convert image to text using Tesseract OCR
+
+
+def convert_image_to_text(img):
+    text = pytesseract.image_to_string(img)
     return text
+
+# Main function to extract text from a PDF file
+
+
+def pdf_to_text(pdf_bytes):
+    return get_text_from_any_pdf(pdf_bytes)
+
+# Function to create or load the conversation chain
 
 
 @st.cache_resource
@@ -52,6 +69,8 @@ def get_conversation_chain(_vectorstore):
         memory=memory
     )
     return conversation_chain
+
+# Function to create or load the vector store
 
 
 def get_vectorstore(texts, pdf):
@@ -69,18 +88,19 @@ def get_vectorstore(texts, pdf):
                 pickle.dump(doc_search, f)
                 return doc_search
 
+# Function to handle user input and display the conversation
+
 
 def handle_userinput(user_question):
     response = st.session_state["conversation"]({'question': user_question})
     st.session_state["chat_history"] = response['chat_history']
 
     for i, message in enumerate(st.session_state["chat_history"]):
-        if i % 2 == 0:
-            st.write(user_template.replace(
-                "{{MSG}}", message.content), unsafe_allow_html=True)
-        else:
-            st.write(bot_template.replace(
-                "{{MSG}}", message.content), unsafe_allow_html=True)
+        template = user_template if i % 2 == 0 else bot_template
+        st.write(template.replace(
+            "{{MSG}}", message.content), unsafe_allow_html=True)
+
+# Main function to run the Streamlit app
 
 
 def main():
@@ -95,12 +115,14 @@ def main():
     st.session_state["chat_history"] = None
     if "session_state" not in st.session_state:
         st.session_state["session_state"] = None
+
     if st.button("Reload page"):
         st.cache_resource.clear()
         st.session_state["conversation"] = None
         st.session_state["chat_history"] = None
         st.session_state["session_state"] = None
         st.experimental_rerun()
+
     st.title('Pdf Chat App')
     st.header('Chat with PDF')
 
@@ -109,20 +131,24 @@ def main():
     raw_text = ''
     if pdf is not None:
         for single_pdf in pdf:
-            pdfreader = PdfReader(single_pdf)
-            for i, page in enumerate(pdfreader.pages):
-                content = page.extract_text()
-                if content:
-                    raw_text += content
-            # raw_text += pdf_to_text(pdfreader)
+            # pdfreader = PdfReader(single_pdf)
+            # for i, page in enumerate(pdfreader.pages):
+            #     content = page.extract_text()
+            #     if content:
+            #         raw_text += content
+            pdf_bytes = single_pdf.read()
+            raw_text += pdf_to_text(pdf_bytes)
 
     if 'raw_text' in locals():
+        # st.write(raw_text)
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
             length_function=len,
         )
         texts = text_splitter.split_text(raw_text)
+        # st.write(texts)
+
 
     if len(texts) > 0:
         doc_search = get_vectorstore(texts, pdf)
