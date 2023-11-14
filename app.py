@@ -12,6 +12,33 @@ import pickle
 import warnings
 from configEnv import settings
 from htmlTemplates import css, bot_template, user_template
+import fitz  # PyMuPDF
+from PIL import Image
+import pytesseract
+import time
+
+
+def pdf_to_text(pdf_document):
+    text = ""
+    st.write(pdf_document)
+    for page_num in range(len(pdf_document.pages)):
+        page = pdf_document.pages[page_num]
+
+        # Get the pixmap representation of the page
+        pixmap = page.getPixmap()
+
+        # Convert the pixmap to an image using PyMuPDF
+        image = Image.frombytes(
+            "RGB", (pixmap.width, pixmap.height), pixmap.samples)
+
+        image_path = f"temp_img_{page_num + 1}.png"
+        image.save(image_path)
+
+        # Use Tesseract OCR to extract text from the image
+        text += f"\nPage {page_num + 1}:\n"
+        text += pytesseract.image_to_string(image_path)
+
+    return text
 
 
 @st.cache_resource
@@ -68,21 +95,28 @@ def main():
     st.session_state["chat_history"] = None
     if "session_state" not in st.session_state:
         st.session_state["session_state"] = None
+    if st.button("Reload page"):
+        st.cache_resource.clear()
+        st.session_state["conversation"] = None
+        st.session_state["chat_history"] = None
+        st.session_state["session_state"] = None
+        st.experimental_rerun()
     st.title('Pdf Chat App')
     st.header('Chat with PDF')
 
     pdf = st.file_uploader("Upload your Pdf", type='pdf',
                            accept_multiple_files=True)
+    raw_text = ''
     if pdf is not None:
-        raw_text = ''
         for single_pdf in pdf:
             pdfreader = PdfReader(single_pdf)
-
             for i, page in enumerate(pdfreader.pages):
                 content = page.extract_text()
                 if content:
                     raw_text += content
+            # raw_text += pdf_to_text(pdfreader)
 
+    if 'raw_text' in locals():
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
