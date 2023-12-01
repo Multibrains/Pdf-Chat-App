@@ -35,7 +35,7 @@ import fitz  # PyMuPDF
 import requests
 from io import BytesIO
 
-
+st.set_page_config(page_title="Pdf Chat App", page_icon="🤖", layout="centered")
 
 def run_streamlit_app():
     st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -58,7 +58,6 @@ def run_streamlit_app():
         st.experimental_rerun()
 
     st.title('Pdf Chat App')
-    st.header('Chat with PDF')
     pdf_url = st.text_input("Enter PDF URL:")
     pdf_multiple = st.file_uploader("Upload your Pdf", type='pdf',
                            accept_multiple_files=True)

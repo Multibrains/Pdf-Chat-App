@@ -1,2 +1,9 @@
 [server]
-maxUploadSize = 1028
+maxUploadSize = 1028  # Maximum upload size in megabytes
+
+[theme]
+primaryColor = "green"  
+backgroundColor = "#0E1117" 
+secondaryBackgroundColor = "#262730" 
+textColor = "#FAFAFA"  
+font = "monospace"  
