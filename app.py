@@ -1,10 +1,12 @@
 from langchain.llms import OpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
+from langchain.chains.question_answering import load_qa_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
+from langchain.callbacks import get_openai_callback
 from PyPDF2 import PdfReader
 import streamlit as st
 import os
@@ -24,9 +26,11 @@ from pytesseract import image_to_string
 from PyPDF2 import PdfReader
 import fitz  # PyMuPDF
 
+#For link
+import requests
+from io import BytesIO
 
 # Helper function to convert PDF to images and extract text using Tesseract OCR
-
 
 def get_text_from_any_pdf(pdf_bytes):
     images = convert_pdf_to_img(pdf_bytes)
@@ -75,7 +79,11 @@ def get_conversation_chain(_vectorstore):
 
 def get_vectorstore(texts, pdf):
     for single_pdf in pdf:
-        store_name = single_pdf.name[:-4]
+        store_name = ""
+        if(isinstance(single_pdf, str)):
+            store_name = single_pdf
+        else:
+            store_name = single_pdf.name[:-4]
 
         if os.path.exists(f"{store_name}.pkl") and os.path.getsize(f"{store_name}.pkl") > 0:
             with open(f"{store_name}.pkl", "rb") as f:
@@ -99,6 +107,15 @@ def handle_userinput(user_question):
         template = user_template if i % 2 == 0 else bot_template
         st.write(template.replace(
             "{{MSG}}", message.content), unsafe_allow_html=True)
+        
+#download pdf from link
+def download_pdf_from_url(url):
+    response = requests.get(url)
+    st.write(response)
+    file = open("myfile.pdf", "wb")
+    file.write(response.content)
+    file.close()
+    return BytesIO(response.content)
 
 # Main function to run the Streamlit app
 
@@ -125,19 +142,29 @@ def main():
 
     st.title('Pdf Chat App')
     st.header('Chat with PDF')
-
-    pdf = st.file_uploader("Upload your Pdf", type='pdf',
+    pdf_url = st.text_input("Enter PDF URL:")
+    pdf_multiple = st.file_uploader("Upload your Pdf", type='pdf',
                            accept_multiple_files=True)
     raw_text = ''
+    pdf = []
+    if(len(pdf_url) > 0 ):
+        st.write(pdf)
+        pdf = download_pdf_from_url(pdf_url)
+        st.write("PDF Loaded!")
+        pdf =["myfile.pdf"]
+        #pdf.name = pdf_url  
+    pdf.extend(pdf_multiple)
     if pdf is not None:
         for single_pdf in pdf:
-            # pdfreader = PdfReader(single_pdf)
-            # for i, page in enumerate(pdfreader.pages):
-            #     content = page.extract_text()
-            #     if content:
-            #         raw_text += content
-            pdf_bytes = single_pdf.read()
-            raw_text += pdf_to_text(pdf_bytes)
+            if(isinstance(single_pdf, str)):
+                pdfreader = PdfReader(single_pdf)
+                for i, page in enumerate(pdfreader.pages):
+                    content = page.extract_text()
+                    if content:
+                        raw_text += content
+            else:
+                pdf_bytes = single_pdf.read()
+                raw_text += pdf_to_text(pdf_bytes)
 
     if 'raw_text' in locals():
         # st.write(raw_text)
@@ -165,3 +192,16 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+# from pdf_utils import download_pdf_from_url, pdf_to_text
+# from vectorstore_utils import get_vectorstore, get_conversation_chain, handle_userinput
+# from chat_app import run_streamlit_app
+
+# def main():
+#     run_streamlit_app()
+
+# if __name__ == '__main__':
+#     main()
