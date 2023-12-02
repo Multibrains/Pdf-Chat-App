@@ -27,11 +27,6 @@ import io
 import glob
 from pdf2image import convert_from_bytes
 from pytesseract import image_to_string
-
-from PyPDF2 import PdfReader
-import fitz  # PyMuPDF
-
-#For link
 import requests
 from io import BytesIO
 
@@ -67,7 +62,6 @@ def run_streamlit_app():
         pdf = download_pdf_from_url(pdf_url)
         st.write("PDF Loaded!")
         pdf =["myfile.pdf"]
-        #pdf.name = pdf_url  
     pdf.extend(pdf_multiple)
     if pdf is not None:
         for single_pdf in pdf:
@@ -82,14 +76,12 @@ def run_streamlit_app():
                 raw_text += pdf_to_text(pdf_bytes)
 
     if 'raw_text' in locals():
-        # st.write(raw_text)
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
             length_function=len,
         )
         texts = text_splitter.split_text(raw_text)
-        # st.write(texts)
 
 
     if len(texts) > 0:

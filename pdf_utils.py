@@ -26,11 +26,6 @@ import io
 import glob
 from pdf2image import convert_from_bytes
 from pytesseract import image_to_string
-
-from PyPDF2 import PdfReader
-import fitz  # PyMuPDF
-
-#For link
 import requests
 from io import BytesIO
 
@@ -41,28 +36,32 @@ def get_text_from_any_pdf(pdf_bytes):
         final_text += convert_image_to_text(img)
     return final_text
 
-# Helper function to convert PDF to images
 
+
+# Helper function to convert PDF to images
 
 def convert_pdf_to_img(pdf_bytes):
     images = convert_from_bytes(pdf_bytes)
     return images
 
-# Helper function to convert image to text using Tesseract OCR
 
+
+# Helper function to convert image to text using Tesseract OCR
 
 def convert_image_to_text(img):
     text = pytesseract.image_to_string(img)
     return text
 
-# Main function to extract text from a PDF file
 
+
+# Main function to extract text from a PDF file
 
 def pdf_to_text(pdf_bytes):
     return get_text_from_any_pdf(pdf_bytes)
 
-# #download pdf from link
 
+
+# download pdf from link
 
 def download_pdf_from_url(url):
     response = requests.get(url)

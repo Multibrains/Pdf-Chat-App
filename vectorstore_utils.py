@@ -23,24 +23,15 @@ import glob
 from pdf2image import convert_from_bytes
 from pytesseract import image_to_string
 from langchain import HuggingFacePipeline, PromptTemplate
-from PyPDF2 import PdfReader
-import fitz  # PyMuPDF
-
-#For link
 import requests
 from io import BytesIO
 from langchain.chains import ConversationalRetrievalChain
-# from transformers import T5Tokenizer, T5ForConditionalGeneration
-# from transformers import AutoTokenizer, TextStreamer, pipeline
-
-
 
 DEFAULT_SYSTEM_PROMPT = """
-You are a helpful, respectful, and honest assistant. Always answer as helpfully as possible, while being safe.
-Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content.
-Please ensure that your responses are socially unbiased and positive in nature.
-If a question does not make any sense or is not factually coherent, explain why instead of answering something not correct.
-If you don't know the answer to a question, please don't share false information.
+You are a knowledgeable and supportive assistant specialized in risk identification within terms and conditions. Your goal is to help users understand potential risks associated with specific clauses.
+Always provide accurate and clear information to assist users in comprehending legal jargon and complex terms.
+If a question is unclear or lacks coherence, politely seek clarification rather than guessing the intent.
+Refuse to generate responses that may encourage unethical behavior or violate legal guidelines.
 """.strip()
 
 def generate_prompt(prompt: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
@@ -55,37 +46,26 @@ def generate_prompt(prompt: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> 
 
 @st.cache_resource
 def get_conversation_chain(_vectorstore):
-    # tokenizer = T5Tokenizer.from_pretrained("x")
-    # model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-base", device_map="auto")
-    # streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-    # text_pipeline = pipeline(
-    #     "text-generation",
-    #     model=model,
-    #     tokenizer=tokenizer,
-    #     max_new_tokens=1024,
-    #     temperature=0.3,
-    #     top_p=0.95,
-    #     repetition_penalty=1.15,
-    #     streamer=streamer,
-    # )
-
-    # llm = HuggingFacePipeline(pipeline=text_pipeline, model_kwargs={"temperature": 0.3})
     llm = ChatOpenAI()
-    SYSTEM_PROMPT = "Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer."
+    
+    SYSTEM_PROMPT = "Use the following pieces of context to identify potential risks and provide clear explanations. If you are uncertain, admit not knowing rather than guessing. Ensure explanations are simple, compassionate, and informative."
 
     template = generate_prompt(
-        """Use only the chat history and the following information
-        {context}
-        to answer in a helpful manner to the question.
-        Keep your replies short, compassionate and informative.
-        {chat_history}
+        """Analyze the text and leverage the provided context to identify potential risks and offer user-friendly explanations.
+        
+        Context: {context}
+        Focus on clauses related to liability, data usage, arbitration, termination, or other predefined risk factors.
+        Provide concise, compassionate, and informative explanations.
 
-    Question: {question}
-    Response:
-    """,
+        Chat History: {chat_history}
+
+        Question: {question}
+        Response:
+        """,
         system_prompt=SYSTEM_PROMPT,
     )
     prompt = PromptTemplate(template=template, input_variables=["context", "question","chat_history"])
+
     memory = ConversationBufferMemory(
         memory_key="chat_history",
         human_prefix="Question",
@@ -110,8 +90,8 @@ def get_conversation_chain(_vectorstore):
     )
     return qa_chain
 
-# Function to create or load the vector store
 
+# Function to create or load the vector store
 
 def get_vectorstore(texts, pdf):
     for single_pdf in pdf:
