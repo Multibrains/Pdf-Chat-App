@@ -14,7 +14,7 @@ import pickle
 import warnings
 from configEnv import settings
 from htmlTemplates import css, bot_template, user_template
-import fitz  # PyMuPDF
+import fitz 
 from PIL import Image
 import pytesseract
 import time

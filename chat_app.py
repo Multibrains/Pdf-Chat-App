@@ -30,7 +30,7 @@ from pytesseract import image_to_string
 import requests
 from io import BytesIO
 
-st.set_page_config(page_title="Pdf Chat App", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="LegalAI Insight", page_icon="🤖", layout="centered")
 
 def run_streamlit_app():
     st.set_option('deprecation.showfileUploaderEncoding', False)
@@ -52,7 +52,7 @@ def run_streamlit_app():
         st.session_state["session_state"] = None
         st.experimental_rerun()
 
-    st.title('Pdf Chat App')
+    st.title('🤖 LegalAI Insight')
     pdf_url = st.text_input("Enter PDF URL:")
     pdf_multiple = st.file_uploader("Upload your Pdf", type='pdf',
                            accept_multiple_files=True)

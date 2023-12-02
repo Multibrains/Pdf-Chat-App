@@ -1,5 +1,5 @@
 [server]
-maxUploadSize = 1028  # Maximum upload size in megabytes
+maxUploadSize = 1028  
 
 [theme]
 primaryColor = "green"  

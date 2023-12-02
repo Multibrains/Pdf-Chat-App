@@ -37,14 +37,11 @@ def get_text_from_any_pdf(pdf_bytes):
     return final_text
 
 
-
 # Helper function to convert PDF to images
 
 def convert_pdf_to_img(pdf_bytes):
     images = convert_from_bytes(pdf_bytes)
     return images
-
-
 
 # Helper function to convert image to text using Tesseract OCR
 
@@ -52,13 +49,10 @@ def convert_image_to_text(img):
     text = pytesseract.image_to_string(img)
     return text
 
-
-
 # Main function to extract text from a PDF file
 
 def pdf_to_text(pdf_bytes):
     return get_text_from_any_pdf(pdf_bytes)
-
 
 
 # download pdf from link
